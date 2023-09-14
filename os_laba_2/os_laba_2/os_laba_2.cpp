@@ -7,8 +7,8 @@ struct Array
 	double* a;
 	int size;
 	double average;
-	int min_;
-	int max_;
+	double min_;
+	double max_;
 	Array (double* a_, int size_): a(a_), size(size_), average(0), min_(0), max_(0){}
 };
 
@@ -23,17 +23,15 @@ DWORD WINAPI Min_Max(LPVOID arr)
 		if (static_cast<Array*>(arr)->a[i] > max_) 
 		{
 			max_ = static_cast<Array*>(arr)->a[i];
-			index_max = i;
 		}
 		if (static_cast<Array*>(arr)->a[i] < min_) 
 		{
 			min_ = static_cast<Array*>(arr)->a[i];
-			index_min = i;
 		}
 		Sleep(7);
 	}
-	static_cast<Array*>(arr)->max_ = index_max;
-	static_cast<Array*>(arr)->min_ = index_min;
+	static_cast<Array*>(arr)->max_ = max_;
+	static_cast<Array*>(arr)->min_ = min_;
 
 	std::cout << "Min: " << min_ << '\n' << "Max: " << max_ << '\n' 
 		<< "Thread Min_Max is finished.\n";
@@ -86,11 +84,10 @@ int main()
 	WaitForSingleObject(hAverage, INFINITE);
 	CloseHandle(hAverage);
 
-	double max_ = param->a[param->max_], min_ = param->a[param->min_];
 	std::cout << "New array: ";
 	for (int i = 0; i < param->size; i++)
 	{
-		if (param->a[i] == max_ || param->a[i] == min_)
+		if (param->a[i] == param->max_ || param->a[i] == param->min_)
 			param->a[i] = param->average;
 		std::cout << std::setprecision(3) << param->a[i] << " ";
 	}
