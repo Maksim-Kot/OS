@@ -1,7 +1,7 @@
 #pragma once
 #include "..\Creator\Creator.h"
 #include<iomanip>
-void Read_from_bin_file(char* bin_filename, char* reportname, int amount)
+void Read_from_bin_file(char* bin_filename, char* reportname, double amount)
 {
 	employee temp;
 
