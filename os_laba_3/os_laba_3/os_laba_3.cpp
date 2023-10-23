@@ -19,7 +19,7 @@ struct numsThread
 DWORD WINAPI marker(LPVOID _arrF)
 {
 	WaitForSingleObject(st, INFINITE);
-	numsThread arrF = *((numsThread*)_arrF);
+	numsThread arrF = *(static_cast<numsThread*>(_arrF));
 	srand(arrF.num);
 	bool check = false;
 	int count = 0;
@@ -86,7 +86,7 @@ int main()
 		stop[i] = arrF[i].stop;
 		arrF[i].event[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
 		arrF[i].event[1] = CreateEvent(NULL, FALSE, FALSE, NULL);
-		hThread[i] = CreateThread(NULL, 0, marker, (LPVOID)(&arrF[i]), 0, &dwThread[i - 1]);
+		hThread[i] = CreateThread(NULL, 0, marker, static_cast<LPVOID>(&arrF[i]), 0, &dwThread[i - 1]);
 		if (hThread[i] == NULL) return GetLastError();
 		check[i] = false;
 	}
