@@ -6,11 +6,14 @@
 #include <fstream>
 #include <conio.h>
 #include <process.h>
+#include <vector>
 using std::cin;
 using std::cout;
 using std::ifstream;
+using std::ofstream;
 using std::fstream;
 using std::string;
+using std::vector;
 using std::to_string;
 
 
@@ -38,6 +41,16 @@ int main()
 		return GetLastError();
 	}
 
+
+	HANDLE hSemaphoreReady = CreateSemaphore(NULL, 1 - numOfEnters, 1, (LPCWSTR)"SemaphoreReady");
+	if (hSemaphoreWrites == NULL)
+	{
+		cout << "Create semaphore failed.\n";
+		cout << "Press any key to exit.\n";
+		cin.get();
+		return GetLastError();
+	}
+
 	HANDLE hMutex = CreateMutex(NULL, FALSE, (LPCWSTR)"DemoMutex"); 
 	if (hMutex == NULL)
 	{
@@ -46,6 +59,9 @@ int main()
 		cin.get();
 		return GetLastError();
 	}
+
+	HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, (LPCWSTR)"Event");
+	if (hEvent == NULL) return GetLastError();
 
 	STARTUPINFO* si = new STARTUPINFO[numOfSenders];
 	PROCESS_INFORMATION* pi = new PROCESS_INFORMATION[numOfSenders];
@@ -73,7 +89,13 @@ int main()
 		}
 	}
 
-	while (true/*WaitForMultipleObjects(numOfSenders, senders, TRUE, 0) == WAIT_TIMEOUT*/) 
+
+	vector<string> v;
+	v.reserve(numOfEnters);
+	WaitForSingleObject(hSemaphoreReady, INFINITE);
+
+
+	while (true) 
 	{
 		cout << "Input 'read' to read file, or 'close' to stop the process:\n";
 		string text;
@@ -82,21 +104,44 @@ int main()
 		{
 			break;
 		}
-		WaitForSingleObject(hMutex, INFINITE);
-		ifstream in;
-		in.open(filename, fstream::binary);
-		string message;
-		in.seekg(0, in.end);
-		int pos = in.tellg() / 21;
-		in.seekg(in.beg);
-		for (int i = 0; i < pos; ++i)
+		else if (text == "read")
 		{
-			char mess[21];
-			in.read(mess, 21);
-			cout << mess << "\n";
+			ifstream in;
+			in.open(filename, fstream::binary);
+			if (in.peek() == ifstream::traits_type::eof())
+			{
+				ResetEvent(hEvent);
+				WaitForSingleObject(hEvent, INFINITE);
+				ResetEvent(hEvent);
+			}
+			WaitForSingleObject(hMutex, INFINITE);
+			string message;
+			in.seekg(0, in.end);
+			int pos = in.tellg() / 21;
+			in.seekg(in.beg);
+			v.clear();
+			for (int i = 0; i < pos; ++i)
+			{
+				char mess[21];
+				in.read(mess, 21);
+				string s = mess;
+				v.push_back(s);
+			}
+			in.close();
+			ofstream out;
+			out.open(filename, ofstream::binary | ofstream::out | ofstream::trunc);
+			for (int i = 1; i < v.size(); ++i)
+			{
+				char mess[21];
+				strcpy(mess, v[i].c_str());
+				out.write(mess, 21);
+			}
+			out.close();
+			cout << v[0] << "\n";
+			ReleaseSemaphore(hSemaphoreWrites, 1, NULL);
+			ReleaseMutex(hMutex);
 		}
-		in.close();
-		ReleaseMutex(hMutex);
+		else cout << "Input error. Try again.\n";
 	}
 
 	//// закрываем дескриптор мьютекса 
