@@ -24,6 +24,7 @@ DWORD WINAPI Min_Max(LPVOID arr)
 		{
 			max_ = static_cast<Array*>(arr)->a[i];
 		}
+		Sleep(7);
 		if (static_cast<Array*>(arr)->a[i] < min_) 
 		{
 			min_ = static_cast<Array*>(arr)->a[i];
