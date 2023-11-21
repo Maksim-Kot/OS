@@ -155,6 +155,7 @@ int main()
 
 	for (int i = 0; i < numOfSenders; i++) 
 	{
+		TerminateProcess(pi[i].hProcess, 0);
 		CloseHandle(pi[i].hThread);
 		CloseHandle(pi[i].hProcess);
 	}
