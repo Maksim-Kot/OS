@@ -12,9 +12,12 @@
 int empCount;
 employee* emps;
 HANDLE* hReadyEvents;
+HANDLE* hThreads;
+HANDLE* hPipeArray;
+HANDLE* hProcess;
 CRITICAL_SECTION empsCS;
 bool* empIsModifying;
-const char pipeName[30] = "\\\\.\\pipe\\pipe_name";
+char pipeName[30] = "\\\\.\\pipe\\pipe_name_";
 const int MESSAGE_SIZE = 10;
 
 void sortEmps() 
@@ -50,13 +53,14 @@ employee* findEmp(int id)
 void startPocesses(int count) 
 {
     char buff[10];
+    hProcess = new HANDLE[count];
     for (int i = 0; i < count; i++) 
     {
         char cmdargs[80] = "Client.exe ";
         char eventName[50] = "READY_EVENT_";
         itoa(i + 1, buff, MESSAGE_SIZE);
         strcat(eventName, buff);
-        strcat(cmdargs, eventName);
+        strcat(cmdargs, buff);
         WCHAR* name = new WCHAR[strlen(cmdargs) + 1];
         mbstowcs(name, cmdargs, strlen(cmdargs));
         std::cout << cmdargs <<"\n";
@@ -76,6 +80,7 @@ void startPocesses(int count)
             std::cout << GetLastError();
             ExitProcess(0);
         }
+        hProcess[i] = pi[i].hProcess;
     }
 }
 
@@ -174,31 +179,39 @@ DWORD WINAPI messaging(LPVOID p)
 
 void openPipes(int clientCount) 
 {
-    HANDLE hPipe;
-    HANDLE* hThreads = new HANDLE[clientCount];
+    hPipeArray = new HANDLE[clientCount];
+    hThreads = new HANDLE[clientCount];
     for (int i = 0; i < clientCount; i++) 
     {
-        hPipe = CreateNamedPipe(L"\\\\.\\pipe\\pipe_name", PIPE_ACCESS_DUPLEX,
+        char namePipe[30];
+        strcpy(namePipe, pipeName);
+        char buff[10];
+        itoa(i + 1, buff, MESSAGE_SIZE);
+        strcat(namePipe, buff);
+        hPipeArray[i] = CreateNamedPipeA(namePipe, PIPE_ACCESS_DUPLEX,
             PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
             PIPE_UNLIMITED_INSTANCES, 0, 0, INFINITE, NULL);
-        if (INVALID_HANDLE_VALUE == hPipe) 
+        if (INVALID_HANDLE_VALUE == hPipeArray[i]) 
         {
             std::cerr << "Create named pipe failed." << "\n";
             std::cout << GetLastError();
             getch();
             return;
         }
-        if (!ConnectNamedPipe(hPipe, NULL)) 
+        
+    }
+    for (int i = 0; i < clientCount; i++)
+    {
+        if (!ConnectNamedPipe(hPipeArray[i], NULL) && ERROR_PIPE_CONNECTED != GetLastError())
         {
-            std::cout << "No connected clients." << "\n";
-            break;
+            std::cout << "No connected clients." << i + 1 << "\n";
+            std::cout << GetLastError() << "\n";
+            throw;
         }
-        hThreads[i] = CreateThread(NULL, 0, messaging, static_cast<LPVOID>(hPipe), 0, NULL);
+        hThreads[i] = CreateThread(NULL, 0, messaging, static_cast<LPVOID>(hPipeArray[i]), 0, NULL);
     }
     std::cout << "Clients connected to pipe." << "\n";
     WaitForMultipleObjects(clientCount, hThreads, TRUE, INFINITE);
-    std::cout << "All clients are disconnected." << "\n";
-    delete[] hThreads;
 }
 
 int main() {
@@ -227,13 +240,17 @@ int main() {
 
     //creating pipes
     openPipes(clientCount);
+
+    WaitForMultipleObjects(clientCount, hProcess, TRUE, INFINITE);
     for (int i = 0; i < empCount; i++)
         emps[i].print(std::cout);
-    std::cout << "Press any key to exit" << "\n";
+    std::cout << "Press any key to exit." << "\n";
     getch();
     DeleteCriticalSection(&empsCS);
     delete[] empIsModifying;
     delete[] hReadyEvents;
     delete[] emps;
+    delete[] hThreads;
+    delete[] hPipeArray;
     return 0;
 }

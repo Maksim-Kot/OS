@@ -4,7 +4,7 @@
 #include "..\\Server\employee.h"
 #pragma warning(disable: 4996)
 
-const char pipeName[30] = "\\\\.\\pipe\\pipe_name";
+char pipeName[30] = "\\\\.\\pipe\\pipe_name_";
 const int MESSAGE_SIZE = 10;
 
 const int CONNECTION_WAIT_TIME = 5000;
@@ -71,10 +71,12 @@ void messaging(HANDLE hPipe)
 int main(int argc, char* argv[]) 
 {
     //std::cout << argv[1] << "\n";
-    WCHAR* name = new WCHAR[strlen(argv[1]) + 1];
-    mbstowcs(name, argv[1], strlen(argv[1]));
+    char eventName[50] = "READY_EVENT_";
+    strcat(eventName, argv[1]);
+    WCHAR* name = new WCHAR[strlen(eventName) + 1];
+    mbstowcs(name, eventName, strlen(eventName));
     //std::cout << cmdargs << "\n";
-    name[strlen(argv[1])] = 0;
+    name[strlen(eventName)] = 0;
     //HANDLE hReadyEvent = CreateEvent(NULL, TRUE, FALSE, name);
     HANDLE hReadyEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, name);
     HANDLE hStartEvent = CreateEvent(NULL, TRUE, FALSE, (LPCWSTR)"START_ALL");
@@ -102,21 +104,30 @@ int main(int argc, char* argv[])
     HANDLE hPipe;
     while (true) 
     {
-        hPipe = CreateFile(L"\\\\.\\pipe\\pipe_name", GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL,
+        char namePipe[30];
+        strcpy(namePipe, pipeName);
+        strcat(namePipe, argv[1]);
+        std::cout << namePipe << "\n";
+
+        Sleep(500);
+
+        if (!WaitNamedPipeA(namePipe, NMPWAIT_WAIT_FOREVER))
+        {
+            std::cout << "5 second wait timed out." << "\n";
+            std::cout << GetLastError() << "\n";
+            getch();
+            return 0;
+        }
+        hPipe = CreateFileA(namePipe, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ, NULL,
             OPEN_EXISTING, 0, NULL);
         //if valid, stop trying to connect
         if (INVALID_HANDLE_VALUE != hPipe) 
         {
             break;
         }
-        if (!WaitNamedPipe(L"\\\\.\\pipe\\pipe_name", NMPWAIT_USE_DEFAULT_WAIT))
-        {
-            std::cout << "5 second wait timed out." << "\n";
-            getch();
-            return 0;
-        }
     }
     std::cout << "Connected to pipe." << "\n";
+    SetEvent(hReadyEvent);
     messaging(hPipe);
     return 0;
 }
