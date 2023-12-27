@@ -12,6 +12,15 @@ struct Array
 	Array (double* a_, int size_): a(a_), size(size_), average(0), min_(0), max_(0){}
 };
 
+void Replace(Array* param)
+{
+	for (int i = 0; i < param->size; i++)
+	{
+		if (param->a[i] == param->max_ || param->a[i] == param->min_)
+			param->a[i] = param->average;
+	}
+}
+
 DWORD WINAPI Min_Max(LPVOID arr)
 {
 	std::cout << "Thread Min_Max is started.\n";
@@ -86,10 +95,9 @@ int main()
 	CloseHandle(hAverage);
 
 	std::cout << "New array: ";
+	Replace(param);
 	for (int i = 0; i < param->size; i++)
 	{
-		if (param->a[i] == param->max_ || param->a[i] == param->min_)
-			param->a[i] = param->average;
 		std::cout << std::setprecision(3) << param->a[i] << " ";
 	}
 	std::cout << '\n';
