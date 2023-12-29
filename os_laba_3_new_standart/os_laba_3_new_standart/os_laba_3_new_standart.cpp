@@ -25,6 +25,7 @@ void marker(numsThread& arrF)
 	std::unique_lock<std::mutex> lock(mtx);
 	// wait for signal from main
 	st.wait(lock, [] { return ready; });
+	lock.unlock();
 	srand(arrF.num);
 	bool check = false;
 	int count = 0;
