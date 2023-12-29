@@ -47,8 +47,14 @@ int main()
 
 	try
 	{
+		bip::named_semaphore::remove("SemaphoreWrites");
+		bip::named_semaphore::remove("SemaphoreReady");
+		bip::named_mutex::remove("DemoMutex");
+		bip::named_mutex::remove("MutexForEvent");
+		bip::named_condition::remove("Event");
+
 		// Создание и открытие именованных семафоров
-		bip::named_semaphore hSemaphoreWrites(bip::open_or_create, "SemaphoreWrites", numOfEnters);
+		bip::named_semaphore hSemaphoreWrites(bip::create_only, "SemaphoreWrites", numOfEnters);
 		bip::named_semaphore hSemaphoreReady(bip::open_or_create, "SemaphoreReady", 1 - numOfEnters);
 
 		// Создание и открытие именованного мьютекса
@@ -61,17 +67,14 @@ int main()
 
 
 		vector<bp::child> processes;
-		vector<bp::environment> envs;
 		string arg = "Sender.exe " + filename;
 
 
 		for (int i = 0; i < numOfSenders; ++i)
 		{
-			//boost::process::environment env = boost::this_process::environment();
 			bp::child c(arg, new_console());
 			if (c.running()) cout << "Good\n";
 			processes.push_back(std::move(c));
-			//envs.push_back(std::move(env));
 		}
 
 		// Далее ваш код обработки запущенных процессов...
@@ -142,6 +145,7 @@ int main()
 	catch (const std::exception& e)
 	{
 		std::cerr << "Exception: " << e.what() << "\n";
+		cout << GetLastError() << "\n";
 	}
 
 	return 0;
