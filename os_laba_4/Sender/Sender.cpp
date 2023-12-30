@@ -1,89 +1,140 @@
-#pragma warning(disable: 4996)
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <Windows.h>
+#pragma warning(disable: 4996)
+
 using std::cin;
 using std::cout;
 using std::ofstream;
 using std::string;
-int main(int argc, char* argv[]) 
+
+HANDLE OpenWritesSemaphore()
 {
-	HANDLE hSemaphoreWrites = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, (LPCWSTR)"SemaphoreWrites");
-	if (hSemaphoreWrites == NULL)
-	{
-		cout << "Create semaphore failed.\n";
-		cout << "Press any key to exit.\n";
-		cin.get();
-		return GetLastError();
-	}
+    return OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, (LPCWSTR)"SemaphoreWrites");
+}
 
-	HANDLE hSemaphoreReady = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, (LPCWSTR)"SemaphoreReady");
-	if (hSemaphoreWrites == NULL)
-	{
-		cout << "Create semaphore failed.\n";
-		cout << "Press any key to exit.\n";
-		cin.get();
-		return GetLastError();
-	}
+HANDLE OpenReadySemaphore()
+{
+    HANDLE hSemaphoreReady = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, (LPCWSTR)"SemaphoreReady");
+    return hSemaphoreReady;
+}
 
-	HANDLE hMutex = OpenMutex(SYNCHRONIZE, FALSE, (LPCWSTR)"DemoMutex");
-	if (hMutex == NULL)
-	{
-		cout << "Open mutex failed.\n";
-		cout << "Press any key to exit.\n";
-		cin.get();
-		return GetLastError();
-	}
+HANDLE OpenDemoMutex()
+{
+    return OpenMutex(SYNCHRONIZE, FALSE, (LPCWSTR)"DemoMutex");
+}
 
-	HANDLE hEvent = CreateEvent(NULL, TRUE, FALSE, (LPCWSTR)"Event");
-	if (hEvent == NULL) return GetLastError();
+HANDLE OpenDemoEvent()
+{
+    return CreateEvent(NULL, TRUE, FALSE, (LPCWSTR)"Event");
+}
 
-	string s = argv[1];
-	cout << s << "\n";
+bool OpenFile(ofstream& out, const string& filename)
+{
+    out.open(filename, std::ofstream::binary | std::ios_base::app);
+    return out.is_open();
+}
 
-	ofstream out;
-	out.open(s, ofstream::binary | std::ios_base::app);
-	if(!out.is_open()) cout << "File not found.\n";
-	ReleaseSemaphore(hSemaphoreReady, 1, NULL);
-	string message;
-	while (true) 
-	{
-		bool q = true;
-		cout << "Input 'send' to send your message or input 'close' to stop:\n";
-		cin >> message;
-		if (message == "close")
-		{
-			break;
-		}
-		else if (message == "send")
-		{
 
-			while (q)
-			{
-				WaitForSingleObject(hSemaphoreWrites, INFINITE);
-				cout << "Input your message (it must not be more than 20 character):\n";
-				cin >> message;
-				if (message.size() > 20)
-				{
-					cout << "The message must not be more than 20 character. Try again.\n";
-					ReleaseSemaphore(hSemaphoreWrites, 1, NULL);
-				}
-				else q = false;
-			}
-			
-			char mess[21];
-			strcpy(mess, message.c_str());
-			WaitForSingleObject(hMutex, INFINITE);
+int main(int argc, char* argv[])
+{
+    string filename = argv[1];
+    cout << filename << "\n";
 
-			if (!out.is_open()) out.open(s, ofstream::binary | std::ios_base::app);
-			out.write(mess, 21);
-			out.close();
-			ReleaseMutex(hMutex);
-			SetEvent(hEvent);
-		}
-		else cout << "Input error. Try again.\n";
-	}
-	CloseHandle(hMutex);
-	return 0;
+
+    HANDLE hSemaphoreWrites = OpenWritesSemaphore();
+    if (hSemaphoreWrites == NULL)
+    {
+        cout << "Open semaphore failed1. Error code: " << GetLastError() << "\n";
+        cout << "Press any key to exit.\n";
+        cin.get();
+        return GetLastError();
+    }
+
+    HANDLE hSemaphoreReady = OpenReadySemaphore();
+    if (hSemaphoreWrites == NULL)
+    {
+        cout << "Create semaphore failed.\n";
+        cout << "Press any key to exit.\n";
+        cin.get();
+        return GetLastError();
+    }
+
+    HANDLE hMutex = OpenDemoMutex();
+    if (hMutex == NULL)
+    {
+        cout << "Open mutex failed. Error code: " << GetLastError() << "\n";
+        cout << "Press any key to exit.\n";
+        cin.get();
+        return GetLastError();
+    }
+
+    HANDLE hEvent = OpenDemoEvent();
+    if (hEvent == NULL)
+    {
+        cout << "Open event failed. Error code: " << GetLastError() << "\n";
+        cout << "Press any key to exit.\n";
+        cin.get();
+        return GetLastError();
+    }
+
+    string message;
+    ofstream out;
+    ReleaseSemaphore(hSemaphoreReady, 1, NULL);
+
+    while (true)
+    {
+        bool q = true;
+        cout << "Input 'send' to send your message or input 'close' to stop:\n";
+        cin >> message;
+        if (message == "close")
+        {
+            break;
+        }
+        else if (message == "send")
+        {
+            while (q)
+            {
+                WaitForSingleObject(hSemaphoreWrites, INFINITE);
+                cout << "Input your message (it must not be more than 20 characters):\n";
+                cin >> message;
+                if (message.size() > 20)
+                {
+                    cout << "The message must not be more than 20 characters. Try again.\n";
+                    ReleaseSemaphore(hSemaphoreWrites, 1, NULL);
+                }
+                else
+                {
+                    q = false; // Make false to exit from while and write message
+                }
+            }
+
+            char mess[21];
+            strcpy(mess, message.c_str());
+            WaitForSingleObject(hMutex, INFINITE);
+
+            if (!OpenFile(out, filename))
+            {
+                cout << "File not found.\n";
+                break;
+            }
+            out.write(mess, 21);
+            out.close();
+            ReleaseMutex(hMutex);
+            SetEvent(hEvent);
+        }
+        else
+        {
+            cout << "Input error. Try again.\n";
+        }
+    }
+
+
+    CloseHandle(hSemaphoreWrites);
+    CloseHandle(hSemaphoreReady);
+    CloseHandle(hMutex);
+    CloseHandle(hEvent);
+
+    return 0;
 }
