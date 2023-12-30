@@ -180,18 +180,18 @@ namespace UnitTest
 
         TEST_METHOD(TestMethodCreateEvent)
         {
-            HANDLE hMutex = CreateDemoEvent();
-            Assert::IsTrue(NULL != hMutex);
-            CloseHandle(hMutex);
+            HANDLE hEvent = CreateDemoEvent();
+            Assert::IsTrue(NULL != hEvent);
+            CloseHandle(hEvent);
         }
 
         TEST_METHOD(TestMethodEventExist)
         {
-            HANDLE hMutexTest = CreateEvent(NULL, TRUE, FALSE, (LPCWSTR)"Event");
-            HANDLE hMutex = CreateDemoEvent();
+            HANDLE hEventTest = CreateEvent(NULL, TRUE, FALSE, (LPCWSTR)"Event");
+            HANDLE hEvent = CreateDemoEvent();
             Assert::IsTrue(ERROR_ALREADY_EXISTS == GetLastError());
-            CloseHandle(hMutex);
-            CloseHandle(hMutexTest);
+            CloseHandle(hEvent);
+            CloseHandle(hEventTest);
         }
     };
 
