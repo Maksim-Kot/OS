@@ -7,7 +7,7 @@
 char pipeName[30] = "\\\\.\\pipe\\pipe_name_";
 const int MESSAGE_SIZE = 10;
 
-const int CONNECTION_WAIT_TIME = 5000;
+const int PIPE_DELAY = 500;
 
 void messaging(HANDLE hPipe) 
 {
@@ -70,17 +70,13 @@ void messaging(HANDLE hPipe)
 
 int main(int argc, char* argv[]) 
 {
-    //std::cout << argv[1] << "\n";
     char eventName[50] = "READY_EVENT_";
     strcat(eventName, argv[1]);
     WCHAR* name = new WCHAR[strlen(eventName) + 1];
     mbstowcs(name, eventName, strlen(eventName));
-    //std::cout << cmdargs << "\n";
     name[strlen(eventName)] = 0;
-    //HANDLE hReadyEvent = CreateEvent(NULL, TRUE, FALSE, name);
     HANDLE hReadyEvent = OpenEvent(EVENT_MODIFY_STATE, FALSE, name);
     HANDLE hStartEvent = CreateEvent(NULL, TRUE, FALSE, (LPCWSTR)"START_ALL");
-    //OpenEvent(SYNCHRONIZE, FALSE, (LPCWSTR)"START_ALL");
     if (NULL == hStartEvent) 
     {
         std::cerr << "Error in opening start Event." << "\n";
@@ -109,11 +105,11 @@ int main(int argc, char* argv[])
         strcat(namePipe, argv[1]);
         std::cout << namePipe << "\n";
 
-        Sleep(500);
+        Sleep(PIPE_DELAY);
 
         if (!WaitNamedPipeA(namePipe, NMPWAIT_WAIT_FOREVER))
         {
-            std::cout << "5 second wait timed out." << "\n";
+            std::cout << "Wait timed out is over." << "\n";
             std::cout << GetLastError() << "\n";
             getch();
             return 0;
@@ -129,5 +125,10 @@ int main(int argc, char* argv[])
     std::cout << "Connected to pipe." << "\n";
     SetEvent(hReadyEvent);
     messaging(hPipe);
+
+    CloseHandle(hStartEvent);
+    CloseHandle(hReadyEvent);
+    delete[] name;
+
     return 0;
 }

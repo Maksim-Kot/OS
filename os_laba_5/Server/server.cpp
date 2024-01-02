@@ -50,7 +50,7 @@ employee* findEmp(int id)
         empCount, sizeof(employee), empCmp));
 }
 
-void startPocesses(int count) 
+void startPocesses(int count, STARTUPINFO* si, PROCESS_INFORMATION* pi)
 {
     char buff[10];
     hProcess = new HANDLE[count];
@@ -65,8 +65,6 @@ void startPocesses(int count)
         mbstowcs(name, cmdargs, strlen(cmdargs));
         std::cout << cmdargs <<"\n";
         name[strlen(cmdargs)] = 0;
-        STARTUPINFO* si = new STARTUPINFO[count];
-        PROCESS_INFORMATION* pi = new PROCESS_INFORMATION[count];
         ZeroMemory(&si[i], sizeof(STARTUPINFO));
         si[i].cb = sizeof(STARTUPINFO);
         ZeroMemory(&pi[i], sizeof(PROCESS_INFORMATION));
@@ -233,7 +231,9 @@ int main() {
     for (int i = 0; i < empCount; ++i)
         empIsModifying[i] = false;
     hReadyEvents = new HANDLE[clientCount];
-    startPocesses(clientCount);
+    STARTUPINFO* si = new STARTUPINFO[clientCount];
+    PROCESS_INFORMATION* pi = new PROCESS_INFORMATION[clientCount];
+    startPocesses(clientCount, si, pi);
     WaitForMultipleObjects(clientCount, hReadyEvents, TRUE, INFINITE);
     std::cout << "All processes are ready. Starting." << "\n";
     SetEvent(hstartALL);
@@ -246,11 +246,17 @@ int main() {
         emps[i].print(std::cout);
     std::cout << "Press any key to exit." << "\n";
     getch();
+
+
     DeleteCriticalSection(&empsCS);
+    CloseHandle(hstartALL);
     delete[] empIsModifying;
     delete[] hReadyEvents;
     delete[] emps;
     delete[] hThreads;
     delete[] hPipeArray;
+    delete[] hProcess;
+    delete[] si;
+    delete[] pi;
     return 0;
 }
