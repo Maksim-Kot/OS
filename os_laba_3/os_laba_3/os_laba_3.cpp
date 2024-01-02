@@ -2,11 +2,11 @@
 #include <Windows.h> 
 using std::cin;
 using std::cout;
-HANDLE st = CreateEvent(NULL, TRUE, FALSE, NULL);
+HANDLE st; 
 int n;
-HANDLE* hThread;
 int markerCount;
 CRITICAL_SECTION criticalSection;
+const int THREAD_DELAY = 5;
 
 struct numsThread 
 {
@@ -30,9 +30,9 @@ DWORD WINAPI marker(LPVOID _arrF)
 		EnterCriticalSection(&criticalSection);
 		if (arrF.arr[temp] == 0) 
 		{
-			Sleep(5);
+			Sleep(THREAD_DELAY);
 			arrF.arr[temp] = arrF.num;
-			Sleep(5);
+			Sleep(THREAD_DELAY);
 			count += 1;
 			LeaveCriticalSection(&criticalSection);
 		}
@@ -62,6 +62,8 @@ DWORD WINAPI marker(LPVOID _arrF)
 int main() 
 {
 	InitializeCriticalSection(&criticalSection);
+	st = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if(NULL == st) return  GetLastError();
 	int* arr;
 	DWORD* dwThread;
 	HANDLE* hThread;
@@ -85,9 +87,11 @@ int main()
 		arrF[i].num = i + 1;
 		stop[i] = arrF[i].stop;
 		arrF[i].event[0] = CreateEvent(NULL, FALSE, FALSE, NULL);
+		if (NULL == arrF[i].event[0]) return GetLastError();
 		arrF[i].event[1] = CreateEvent(NULL, FALSE, FALSE, NULL);
-		hThread[i] = CreateThread(NULL, 0, marker, static_cast<LPVOID>(&arrF[i]), 0, &dwThread[i - 1]);
-		if (hThread[i] == NULL) return GetLastError();
+		if (NULL == arrF[i].event[1]) return GetLastError();
+		hThread[i] = CreateThread(NULL, 0, marker, static_cast<LPVOID>(&arrF[i]), 0, &dwThread[i]);
+		if (NULL == hThread[i]) return GetLastError();
 		check[i] = false;
 	}
 	SetEvent(st);
@@ -142,6 +146,15 @@ int main()
 		CloseHandle(arrF[i].event[0]);
 		CloseHandle(arrF[i].event[1]);
 	}
+	CloseHandle(st);
 	DeleteCriticalSection(&criticalSection);
+
+	delete[] arr;
+	delete[] hThread;
+	delete[] dwThread;
+	delete[] arrF;
+	delete[] check;
+	delete[] stop;
+
 	return 0;
 }
