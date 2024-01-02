@@ -12,6 +12,7 @@ std::mutex mtx;
 std::condition_variable st;
 bool ready = false;
 std::vector<int> thread_action;
+constexpr int THREAD_DELAY = 5;
 
 struct numsThread
 {
@@ -36,9 +37,9 @@ void marker(numsThread& arrF)
 		critical_mutex.lock();
 		if (arrF.arr[temp] == 0)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+			std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_DELAY));
 			arrF.arr[temp] = arrF.num;
-			std::this_thread::sleep_for(std::chrono::milliseconds(5));
+			std::this_thread::sleep_for(std::chrono::milliseconds(THREAD_DELAY));
 			count += 1;
 			critical_mutex.unlock();
 		}
