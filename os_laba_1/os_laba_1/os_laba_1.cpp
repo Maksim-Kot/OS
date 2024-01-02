@@ -116,5 +116,9 @@ int main()
 	CloseHandle(piCom2.hThread);
 	CloseHandle(piCom2.hProcess);
 	Console_report(reportfile_name);
+
+	delete[] name_creator;
+	delete[] name_reporter;
+
 	return 0;
 }
