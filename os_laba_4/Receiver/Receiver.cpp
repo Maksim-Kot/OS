@@ -64,6 +64,9 @@ bool CreateSenderProcesses(STARTUPINFO* si, PROCESS_INFORMATION* pi, const strin
             return false; // Return false if process not created
         }
     }
+
+    delete[] name_of_sender;
+
     return true; // Return true for simplicity
 }
 
@@ -119,36 +122,36 @@ int main()
 
 
     HANDLE hSemaphoreWrites = CreateWritesSemaphore(numOfEnters);
-    if (hSemaphoreWrites == NULL)
+    if (NULL == hSemaphoreWrites)
     {
-        cout << "Create semaphore failed1. Error code: " << GetLastError() << "\n";
+        cout << "Create writes semaphore failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
     }
 
     HANDLE hSemaphoreReady = CreateReadySemaphore(numOfEnters);
-    if (hSemaphoreWrites == NULL)
+    if (NULL == hSemaphoreReady)
     {
-        cout << "Create semaphore failed.\n";
+        cout << "Create ready semaphore failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
     }
 
     HANDLE hMutex = CreateDemoMutex();
-    if (hMutex == NULL)
+    if (NULL == hMutex)
     {
-        cout << "Create mutex failed. Error code: " << GetLastError() << "\n";;
+        cout << "Create mutex failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
     }
 
     HANDLE hEvent = CreateDemoEvent();
-    if (hEvent == NULL)
+    if (NULL == hEvent)
     {
-        cout << "Create event failed. Error code: " << GetLastError() << "\n";;
+        cout << "Create event failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
@@ -158,8 +161,8 @@ int main()
     PROCESS_INFORMATION* pi = new PROCESS_INFORMATION[numOfSenders];
     if (!CreateSenderProcesses(si, pi, filename, numOfSenders))
     {
-        cout << GetLastError();
-        ExitProcess(0);
+        cout << "Create processes failed.\n";
+        return GetLastError();
     }
 
     vector<string> fileContent; // Vector for saving information on file

@@ -44,36 +44,36 @@ int main(int argc, char* argv[])
 
 
     HANDLE hSemaphoreWrites = OpenWritesSemaphore();
-    if (hSemaphoreWrites == NULL)
+    if (NULL == hSemaphoreWrites)
     {
-        cout << "Open semaphore failed1. Error code: " << GetLastError() << "\n";
+        cout << "Open writes semaphore failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
     }
 
     HANDLE hSemaphoreReady = OpenReadySemaphore();
-    if (hSemaphoreWrites == NULL)
+    if (NULL == hSemaphoreReady)
     {
-        cout << "Create semaphore failed.\n";
+        cout << "Create ready semaphore failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
     }
 
     HANDLE hMutex = OpenDemoMutex();
-    if (hMutex == NULL)
+    if (NULL == hMutex)
     {
-        cout << "Open mutex failed. Error code: " << GetLastError() << "\n";
+        cout << "Open mutex failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
     }
 
     HANDLE hEvent = OpenDemoEvent();
-    if (hEvent == NULL)
+    if (NULL == hEvent)
     {
-        cout << "Open event failed. Error code: " << GetLastError() << "\n";
+        cout << "Open event failed.\n";
         cout << "Press any key to exit.\n";
         cin.get();
         return GetLastError();
@@ -116,8 +116,8 @@ int main(int argc, char* argv[])
 
             if (!OpenFile(out, filename))
             {
-                cout << "File not found.\n";
-                break;
+                cout << "Open file failed.\n";
+                return GetLastError();
             }
             out.write(mess, 21);
             out.close();
