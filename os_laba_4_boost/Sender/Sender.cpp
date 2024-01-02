@@ -51,7 +51,7 @@ int main(int argc, char* argv[])
             else if (message == "send")
             {
 
-                while (q)
+                while (q) // Input message
                 {
                     hSemaphoreWrites.wait();
                     cout << "Input your message (it must not be more than 20 character):\n";
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
                     if (message.size() > 20)
                     {
                         cout << "The message must not be more than 20 character. Try again.\n";
-                        hSemaphoreWrites.post();
+                        hSemaphoreWrites.post(); // Release semaphore if input incorrect
                     }
                     else q = false;
                 }
@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
                 strcpy(mess, message.c_str());
 
                 bip::scoped_lock<bip::named_mutex> lock(hMutex);
-                if (!out.is_open()) out.open(s, ofstream::binary | std::ios_base::app);
+                if (!out.is_open()) out.open(s, ofstream::binary | std::ios_base::app); // Write message to the file
                 out.write(mess, 21);
                 out.close();
                 lock.unlock();

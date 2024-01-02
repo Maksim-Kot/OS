@@ -53,15 +53,15 @@ int main()
 		bip::named_mutex::remove("MutexForEvent");
 		bip::named_condition::remove("Event");
 
-		// Создание и открытие именованных семафоров
+		// Create and open named semaphores
 		bip::named_semaphore hSemaphoreWrites(bip::create_only, "SemaphoreWrites", numOfEnters);
 		bip::named_semaphore hSemaphoreReady(bip::open_or_create, "SemaphoreReady", 1 - numOfEnters);
 
-		// Создание и открытие именованного мьютекса
+		// Create and open a named mutex
 		bip::named_mutex hMutex(bip::open_or_create, "DemoMutex");
 		bip::named_mutex mutex(bip::open_or_create, "MutexForEvent");
 
-		// Создание и открытие именованного условия
+		// Create and open a named condition
 		bip::named_condition hEvent(bip::open_or_create, "Event");
 
 
@@ -70,16 +70,14 @@ int main()
 		string arg = "Sender.exe " + filename;
 
 
-		for (int i = 0; i < numOfSenders; ++i)
+		for (int i = 0; i < numOfSenders; ++i) // Create processes
 		{
 			bp::child c(arg, new_console());
 			if (c.running()) cout << "Good\n";
 			processes.push_back(std::move(c));
 		}
 
-		// Далее ваш код обработки запущенных процессов...
-
-
+		
 
 		vector<string> v;
 		v.reserve(numOfEnters);
@@ -101,7 +99,7 @@ int main()
 			{
 				ifstream in;
 				in.open(filename, fstream::binary);
-				if (in.peek() == ifstream::traits_type::eof())
+				if (in.peek() == ifstream::traits_type::eof()) // Checking that the file is empty
 				{
 					bip::scoped_lock<bip::named_mutex> lock(mutex);
 					hEvent.wait(lock);
@@ -113,7 +111,7 @@ int main()
 				int pos = in.tellg() / 21;
 				in.seekg(in.beg);
 				v.clear();
-				for (int i = 0; i < pos; ++i)
+				for (int i = 0; i < pos; ++i) // Read file
 				{
 					char mess[21];
 					in.read(mess, 21);
@@ -123,7 +121,7 @@ int main()
 				in.close();
 				ofstream out;
 				out.open(filename, ofstream::binary | ofstream::out | ofstream::trunc);
-				for (int i = 1; i < v.size(); ++i)
+				for (int i = 1; i < v.size(); ++i) // Writing to a file without the first message
 				{
 					char mess[21];
 					strcpy(mess, v[i].c_str());
