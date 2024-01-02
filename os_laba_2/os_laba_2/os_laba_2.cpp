@@ -2,6 +2,9 @@
 #include <iostream>
 #include <iomanip>
 
+const int THREAD_DELAY_MIN_MAX = 7;
+const int THREAD_DELAY_AVERAGE = 12;
+
 struct Array
 {
 	double* a;
@@ -10,6 +13,10 @@ struct Array
 	double min_;
 	double max_;
 	Array (double* a_, int size_): a(a_), size(size_), average(0), min_(0), max_(0){}
+	~Array() 
+	{
+		delete[] a;
+	}
 };
 
 void Replace(Array* param)
@@ -33,12 +40,12 @@ DWORD WINAPI Min_Max(LPVOID arr)
 		{
 			max_ = static_cast<Array*>(arr)->a[i];
 		}
-		Sleep(7);
+		Sleep(THREAD_DELAY_MIN_MAX);
 		if (static_cast<Array*>(arr)->a[i] < min_) 
 		{
 			min_ = static_cast<Array*>(arr)->a[i];
 		}
-		Sleep(7);
+		Sleep(THREAD_DELAY_MIN_MAX);
 	}
 	static_cast<Array*>(arr)->max_ = max_;
 	static_cast<Array*>(arr)->min_ = min_;
@@ -55,7 +62,7 @@ DWORD WINAPI Average(LPVOID arr)
 	for (int i = 0; i < static_cast<Array*>(arr)->size; i++)
 	{
 		sum += static_cast<Array*>(arr)->a[i];
-		Sleep(12);
+		Sleep(THREAD_DELAY_AVERAGE);
 	}
 	static_cast<Array*>(arr)->average = sum / static_cast<Array*>(arr)->size;
 	
@@ -101,5 +108,8 @@ int main()
 		std::cout << std::setprecision(3) << param->a[i] << " ";
 	}
 	std::cout << '\n';
+
+	delete[] a;
+
 	return 0;
 }
